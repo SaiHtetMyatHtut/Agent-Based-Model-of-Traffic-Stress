@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traffic Congestion Graph</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f2ea;
+      --surface: #ffffff;
+      --ink: #232323;
+      --muted: #686156;
+      --line: #d8d0c2;
+      --green: #0d8a68;
+      --blue: #286aa8;
+      --red: #c94337;
+      --amber: #d88b19;
+      --violet: #7856b8;
+      --shadow: 0 14px 30px rgba(37, 33, 28, 0.11);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: #fbfaf7;
+      padding: 24px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      line-height: 1.08;
+    }
+
+    .status {
+      min-height: 20px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 14px;
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .control {
+      display: grid;
+      gap: 7px;
+    }
+
+    label {
+      color: #3a3834;
+      font-size: 0.86rem;
+      font-weight: 730;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--ink);
+      padding: 0 12px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--green);
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .value-pill {
+      min-width: 112px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--muted);
+      padding: 5px 8px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .button {
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 0 12px;
+      background: var(--ink);
+      color: white;
+      cursor: pointer;
+      font-weight: 750;
+    }
+
+    .button.secondary {
+      border-color: var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .button:disabled {
+      cursor: wait;
+      opacity: 0.55;
+    }
+
+    .main {
+      display: grid;
+      align-content: start;
+      gap: 18px;
+      padding: 24px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 84px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 8px 20px rgba(34, 31, 27, 0.06);
+      padding: 14px;
+    }
+
+    .metric-label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 760;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      font-size: 1.35rem;
+      font-weight: 820;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(360px, 1fr));
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 54px;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      padding: 0 16px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 820;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .canvas-wrap {
+      padding: 14px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 2.35;
+      border-radius: 6px;
+      background: #f8f6f0;
+    }
+
+    .equation-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .equation-table th,
+    .equation-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .equation-table th {
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+    }
+
+    .equation-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .mono {
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 0.86rem;
+    }
+
+    @media (max-width: 1120px) {
+      .app-shell,
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .sidebar,
+      .main {
+        padding: 16px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .metric-grid,
+      .scenario-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div>
+        <p class="eyebrow">Simple traffic model</p>
+        <h1>Traffic Congestion Graph</h1>
+        <p id="statusText" class="status">Ready.</p>
+      </div>
+
+      <form id="simulationForm">
+        <div class="control-group">
+          <div class="control">
+            <label for="carsPerSecond">Cars arriving each second</label>
+            <div class="range-row">
+              <input id="carsPerSecond" name="cars_per_second" type="range" min="0.5" max="24" step="0.5" value="6">
+              <span class="value-pill" data-value-for="carsPerSecond">6.0 cars/s</span>
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="roadLanes">Road capacity</label>
+            <select id="roadLanes" name="road_lanes">
+              <option value="1">1 lane</option>
+              <option value="2">2 lanes</option>
+              <option value="3" selected>3 lanes</option>
+              <option value="4">4 lanes</option>
+              <option value="5">5 lanes</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <label for="trafficLightSeconds">Traffic light duration</label>
+            <div class="range-row">
+              <input id="trafficLightSeconds" name="traffic_light_seconds" type="range" min="15" max="120" step="5" value="45">
+              <span class="value-pill" data-value-for="trafficLightSeconds">45 sec</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control">
+            <label for="simulationMinutes">Simulation time</label>
+            <div class="range-row">
+              <input id="simulationMinutes" name="simulation_minutes" type="range" min="1" max="12" step="1" value="5">
+              <span class="value-pill" data-value-for="simulationMinutes">5 min / 300 steps</span>
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="seed">Seed</label>
+            <input id="seed" name="seed" type="number" min="0" max="999999" value="7">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <button id="runButton" class="button" type="submit">Run Simulation</button>
+        </div>
+
+        <div class="control-group">
+          <div class="scenario-grid">
+            <button class="button secondary" type="button" data-scenario="light">Light Traffic</button>
+            <button class="button secondary" type="button" data-scenario="busy">Busy Traffic</button>
+            <button class="button secondary" type="button" data-scenario="wide">Wide Road</button>
+            <button class="button secondary" type="button" data-scenario="longLight">Long Light</button>
+          </div>
+        </div>
+      </form>
+    </aside>
+
+    <main class="main">
+      <section id="metrics" class="metric-grid" aria-label="Simulation metrics"></section>
+
+      <section class="chart-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Traffic Stress</h2>
+            <div class="legend">
+              <span class="legend-item" style="color: var(--red)"><span class="swatch"></span>Smoothed traffic stress</span>
+              <span class="legend-item" style="color: var(--violet)"><span class="swatch"></span>Instant stress score</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="stressCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Cars Arriving And Waiting</h2>
+            <div class="legend">
+              <span class="legend-item" style="color: var(--green)"><span class="swatch"></span>Arriving</span>
+              <span class="legend-item" style="color: var(--amber)"><span class="swatch"></span>Waiting</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="queueCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Cars Passing One Lane</h2>
+            <div class="legend">
+              <span class="legend-item" style="color: var(--blue)"><span class="swatch"></span>Passing cars</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="passingCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Equation Inputs</h2>
+            <div class="legend">
+              <span class="legend-item" style="color: var(--blue)"><span class="swatch"></span>Arriving cars score</span>
+              <span class="legend-item" style="color: var(--amber)"><span class="swatch"></span>Waiting cars score</span>
+              <span class="legend-item" style="color: var(--green)"><span class="swatch"></span>Road capacity score</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="variableCanvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Model Variables</h2>
+        </div>
+        <table class="equation-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Final value</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody id="equationBody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById("simulationForm");
+    const statusText = document.getElementById("statusText");
+    const runButton = document.getElementById("runButton");
+    const metrics = document.getElementById("metrics");
+    const equationBody = document.getElementById("equationBody");
+    const stressCanvas = document.getElementById("stressCanvas");
+    const queueCanvas = document.getElementById("queueCanvas");
+    const passingCanvas = document.getElementById("passingCanvas");
+    const variableCanvas = document.getElementById("variableCanvas");
+    const apiBaseUrl = new URLSearchParams(window.location.search).get("api")?.replace(/\/$/, "") ||
+      (window.location.protocol === "file:" ? "http://127.0.0.1:8001" : "");
+
+    let latestResult = null;
+
+    const scenarios = {
+      light: { carsPerSecond: 3, roadLanes: 3, trafficLightSeconds: 45, simulationMinutes: 5, seed: 7 },
+      busy: { carsPerSecond: 12, roadLanes: 3, trafficLightSeconds: 45, simulationMinutes: 5, seed: 11 },
+      wide: { carsPerSecond: 12, roadLanes: 5, trafficLightSeconds: 40, simulationMinutes: 5, seed: 21 },
+      longLight: { carsPerSecond: 10, roadLanes: 2, trafficLightSeconds: 90, simulationMinutes: 5, seed: 31 },
+    };
+
+    const ids = {
+      simulationMinutes: "simulation_minutes",
+      carsPerSecond: "cars_per_second",
+      roadLanes: "road_lanes",
+      trafficLightSeconds: "traffic_light_seconds",
+      seed: "seed",
+    };
+
+    document.querySelectorAll("input[type='range'], select").forEach((input) => {
+      input.addEventListener("input", () => updateRangeValue(input));
+      input.addEventListener("change", () => updateRangeValue(input));
+      updateRangeValue(input);
+    });
+
+    document.querySelectorAll("[data-scenario]").forEach((button) => {
+      button.addEventListener("click", () => {
+        applyScenario(scenarios[button.dataset.scenario]);
+        runSimulation();
+      });
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      runSimulation();
+    });
+
+    function updateRangeValue(input) {
+      const label = document.querySelector(`[data-value-for="${input.id}"]`);
+      if (label) label.textContent = formatControlValue(input);
+    }
+
+    function formatControlValue(input) {
+      const value = Number(input.value);
+      if (input.id === "carsPerSecond") return `${value.toFixed(1)} cars/s`;
+      if (input.id === "trafficLightSeconds") return `${value} sec`;
+      if (input.id === "simulationMinutes") return `${value} min / ${value * 60} steps`;
+      return input.value;
+    }
+
+    function applyScenario(values) {
+      for (const [id, value] of Object.entries(values)) {
+        const input = document.getElementById(id);
+        if (input) {
+          input.value = value;
+          updateRangeValue(input);
+        }
+      }
+    }
+
+    function readConfig() {
+      const config = {};
+      for (const [id, apiName] of Object.entries(ids)) {
+        const input = document.getElementById(id);
+        const numeric = Number(input.value);
+        config[apiName] = Number.isInteger(numeric) && !String(input.step || "").includes(".")
+          ? parseInt(input.value, 10)
+          : numeric;
+      }
+      return config;
+    }
+
+    async function runSimulation() {
+      runButton.disabled = true;
+      statusText.textContent = "Running simulation...";
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/simulate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(readConfig()),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Simulation failed with status ${response.status}.`);
+        }
+
+        latestResult = await response.json();
+        renderDashboard(latestResult);
+        statusText.textContent = `Finished ${latestResult.summary.total_steps} steps.`;
+      } catch (error) {
+        statusText.textContent = error instanceof TypeError && apiBaseUrl
+          ? `Could not reach ${apiBaseUrl}.`
+          : error.message;
+      } finally {
+        runButton.disabled = false;
+      }
+    }
+
+    function renderDashboard(result) {
+      renderMetrics(result);
+      renderEquations(result);
+
+      drawLineChart(stressCanvas, [
+        { values: result.timeline.traffic_stress, color: "#c94337" },
+        { values: result.timeline.S, color: "#7856b8" },
+      ], "Simulation step (1 step = 1 second)", "Stress score");
+      drawLineChart(queueCanvas, [
+        { values: result.timeline.cars_arriving, color: "#0d8a68" },
+        { values: result.timeline.cars_waiting, color: "#d88b19" },
+      ], "Simulation step (1 step = 1 second)", "Number of cars");
+      drawLineChart(passingCanvas, [
+        { values: result.timeline.cars_passing, color: "#286aa8" },
+      ], "Simulation step (1 step = 1 second)", "Cars passing per second");
+      drawLineChart(variableCanvas, [
+        { values: result.timeline.A, color: "#286aa8" },
+        { values: result.timeline.B, color: "#d88b19" },
+        { values: result.timeline.C, color: "#0d8a68" },
+      ], "Simulation step (1 step = 1 second)", "Equation score");
+    }
+
+    function renderMetrics(result) {
+      const s = result.summary;
+      const items = [
+        ["Arriving cars", s.total_arriving_cars],
+        ["Passed cars", s.total_passing_cars],
+        ["Waiting cars", s.cars_left_waiting],
+        ["Peak waiting", s.peak_waiting_cars],
+        ["Peak stress", formatNumber(s.peak_stress)],
+        ["Road capacity", `${s.road_capacity_cars} cars`],
+        ["Pass rate", `${s.cars_can_pass_each_second} cars/s`],
+        ["Throughput", `${formatNumber(s.throughput_cars_per_second)} cars/s`],
+      ];
+
+      metrics.innerHTML = items.map(([label, value]) => `
+        <article class="metric">
+          <p class="metric-label">${label}</p>
+          <div class="metric-value">${value}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderEquations(result) {
+      const lastIndex = result.timeline.step.length - 1;
+      const names = {
+        A: "A - arriving cars score",
+        B: "B - waiting cars score",
+        C: "C - road capacity score",
+        X: "X - mixed traffic level",
+        Y: "Y - capacity adjustment",
+        S: "S - instant stress score",
+        traffic_stress: "traffic_stress - smoothed stress",
+      };
+      const rows = ["A", "B", "C", "X", "Y", "S", "traffic_stress"].map((key) => {
+        const value = result.timeline[key][lastIndex];
+        return `
+          <tr>
+            <td class="mono">${names[key]}</td>
+            <td class="mono">${formatNumber(value)}</td>
+            <td>${result.equations[key]}</td>
+          </tr>
+        `;
+      });
+      equationBody.innerHTML = rows.join("");
+    }
+
+    function drawLineChart(canvas, series, xLabel, yLabel) {
+      const { ctx, width, height } = prepareCanvas(canvas);
+      const pad = { left: 64, right: 16, top: 18, bottom: 46 };
+      const plotWidth = width - pad.left - pad.right;
+      const plotHeight = height - pad.top - pad.bottom;
+      const allValues = series.flatMap((item) => item.values.filter((value) => Number.isFinite(value)));
+      const maxValue = Math.max(0.01, ...allValues);
+      const minValue = Math.min(0, ...allValues);
+      const maxLength = Math.max(...series.map((item) => item.values.length));
+      const scaleY = (value) => pad.top + plotHeight - ((value - minValue) / (maxValue - minValue || 1)) * plotHeight;
+      const scaleX = (index) => pad.left + (index / Math.max(maxLength - 1, 1)) * plotWidth;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#f8f6f0";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = "#d8d0c2";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const y = pad.top + (plotHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(width - pad.right, y);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#686156";
+      ctx.font = "12px system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(formatNumber(maxValue), pad.left - 8, pad.top);
+      ctx.fillText(formatNumber(minValue), pad.left - 8, pad.top + plotHeight);
+
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText("0", pad.left, height - 27);
+      ctx.textAlign = "right";
+      ctx.fillText(String(maxLength - 1), width - pad.right, height - 27);
+
+      ctx.textAlign = "center";
+      ctx.fillText(xLabel, pad.left + plotWidth / 2, height - 9);
+
+      ctx.save();
+      ctx.translate(14, pad.top + plotHeight / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(yLabel, 0, 0);
+      ctx.restore();
+
+      series.forEach((item) => {
+        ctx.save();
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        item.values.forEach((value, index) => {
+          const x = scaleX(index);
+          const y = scaleY(value);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    function prepareCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, width, height };
+    }
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return "n/a";
+      if (Math.abs(value) >= 100) return value.toFixed(0);
+      if (Math.abs(value) >= 10) return value.toFixed(1);
+      return value.toFixed(3);
+    }
+
+    window.addEventListener("resize", () => {
+      if (latestResult) renderDashboard(latestResult);
+    });
+
+    runSimulation();
+  </script>
+</body>
+</html>

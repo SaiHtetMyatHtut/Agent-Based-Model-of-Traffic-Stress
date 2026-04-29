@@ -1,0 +1,11 @@
+[project]
+name = "traffic-congestion-abm"
+version = "0.1.0"
+description = "Agent-based traffic congestion simulation with data analytics"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.124.0",
+    "numpy>=2.4.4",
+    "uvicorn>=0.38.0",
+]
